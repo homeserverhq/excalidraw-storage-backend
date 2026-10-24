@@ -2,8 +2,10 @@ import { LogLevel } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
+const LOG_LEVELS: LogLevel[] = ['log', 'error', 'warn', 'debug', 'verbose'];
+
 function isLogLevel(value: any): value is LogLevel {
-  return value in ['log', 'error', 'warn', 'debug', 'verbose'];
+  return LOG_LEVELS.includes(value);
 }
 
 async function bootstrap() {

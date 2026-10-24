@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as Keyv from 'keyv';
+import { toBuffer } from './to-buffer';
 
 @Injectable()
 export class StorageService {
@@ -25,12 +26,37 @@ export class StorageService {
       this.storagesMap.set(namespace, keyv);
     });
   }
-  get(key: string, namespace: StorageNamespace): Promise<Buffer> {
-    return this.storagesMap.get(namespace).get(key);
+
+  async get(
+    key: string,
+    namespace: StorageNamespace,
+  ): Promise<Buffer | undefined> {
+    const value = await this.storagesMap.get(namespace).get(key);
+
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+
+    // Values written by this service are Buffers. Anything else (e.g. legacy
+    // JSON records) must not reach the response as a non-binary value, which
+    // previously threw inside a Readable stream and crashed the process.
+    if (
+      typeof value === 'object' &&
+      !Buffer.isBuffer(value) &&
+      !(value instanceof Uint8Array)
+    ) {
+      this.logger.warn(
+        `Stored value for ${namespace}/${key} is not binary; coercing to JSON bytes`,
+      );
+    }
+
+    return toBuffer(value);
   }
+
   async has(key: string, namespace: StorageNamespace): Promise<boolean> {
-    return !!(await this.storagesMap.get(namespace).get(key));
+    return !!(await this.get(key, namespace));
   }
+
   set(key: string, value: Buffer, namespace: StorageNamespace): Promise<true> {
     return this.storagesMap.get(namespace).set(key, value);
   }

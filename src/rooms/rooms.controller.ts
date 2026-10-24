@@ -10,8 +10,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { StorageNamespace, StorageService } from 'src/storage/storage.service';
-import { Readable } from 'stream';
+import { StorageNamespace, StorageService } from '../storage/storage.service';
 
 @Controller('rooms')
 export class RoomsController {
@@ -30,10 +29,7 @@ export class RoomsController {
       throw new NotFoundException();
     }
 
-    const stream = new Readable();
-    stream.push(data);
-    stream.push(null);
-    stream.pipe(res);
+    res.end(data);
   }
 
   @Put(':id')
